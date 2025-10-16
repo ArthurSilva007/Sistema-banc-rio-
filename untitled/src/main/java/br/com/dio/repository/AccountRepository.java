@@ -1,17 +1,33 @@
 package br.com.dio.repository;
 
 import br.com.dio.exception.AccountNotFoundException;
+import br.com.dio.exception.PixInUseException;
 import br.com.dio.model.AccountWallet;
+import br.com.dio.model.MoneyAudit;
 
+import java.text.ParseException;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static br.com.dio.repository.CommonsRepositoy.CheckFundsForTransaction;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class AccountRepository {
 
-    private List<AccountWallet> accounts;
+    private final List<AccountWallet> accounts = new ArrayList<>();
 
     public AccountWallet create(final List<String> pix, final long initialFunds){
+        if (!accounts.isEmpty()) {
+            var pixInUse = accounts.stream().flatMap(a -> a.getPix().stream()).toList();
+            for (String p : pix) {
+                if (pixInUse.contains(p)) {
+                    throw new PixInUseException("O pix '" + p + "' já está em uso");
+                }
+            }
+        }
         var newAccount = new AccountWallet (initialFunds, pix);
         accounts.add(newAccount);
         return newAccount;
@@ -46,5 +62,16 @@ public class AccountRepository {
 
     public List<AccountWallet> List(){
         return this.accounts;
+    }
+
+    public Map<OffsetDateTime, List<MoneyAudit>> getHistory(final String pix){
+        var wallet = findByPix(pix);
+        var audit = wallet.getFinancialTransactions();
+        return audit.stream()
+                .collect(Collectors
+                        .groupingBy(t -> t
+                                .createdAt()
+                                .truncatedTo(SECONDS)));
+
     }
 }

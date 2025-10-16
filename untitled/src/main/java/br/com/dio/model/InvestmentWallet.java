@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import static br.com.dio.model.BankService.INVESTMENT;
 
-@ToString
 @Getter
 public class InvestmentWallet extends Wallet {
 
@@ -30,6 +29,14 @@ public class InvestmentWallet extends Wallet {
         var money = Stream.generate(() -> new Money(history))
                 .limit(amount)
                 .toList();
-this.money.addAll(money);
+        this.money.addAll(money);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "InvestmentWallet{" +
+                "investment=" + investment +
+                ", account=" + account +
+                '}';
     }
 }
